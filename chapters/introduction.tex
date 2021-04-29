@@ -1,1 +1,14 @@
 \section{介绍}
+样条插值(Spline Interpolation)是计算机辅助几何设计(Computer Aided Geometric Design，简称CAGD；亦称计算几何Computational Geometry\textsuperscript{\cite{farin1999nurbs}})中用于解决插值问题的方法\textsuperscript{\cite{施法中2013计算机辅助几何设计与非均匀有理}}。相比于其他插值方法，样条插值更容易在构造整体上达到参数连续阶(指可微性)。
+
+\subsection{插值与逼近}
+对于一组散乱数据点$ \mathbf{s}_{i} \left( i=1,2,\cdots,n \right) $，要求构造一个函数通过这些数据点，称为散乱数据插值(Sattered Data Interpolation)\textsuperscript{\cite{franke1982scattered}}，所构造的函数称为插值函数。若这些数据点原来位于某函数上，则原函数称为被插函数。若所构造的函数为一条曲线，则称该方法为曲线插值法。同理，若所构造的函数为曲面，则称为曲面插值法。
+
+但是在某些情况下，测量所得的数据点数据存在较大误差，那么要求构造一个函数严格通过数据点的函数则会增加其误差。因此，提出一种与插值类似的方法：构造一个函数使其在某种意义下最接近测量的数据点，这种方法称为逼近(Approximation)，所构造的函数称为逼近函数。与插值相同，对于曲线逼近的方法称为曲线逼近法；对于曲面逼近的方法称为曲面逼近法。
+
+插值和逼近统称为拟合(Fitting)。
+
+\subsection{多层B样条插值}
+多层B样条(Multilevel B-Splines)是由Seungyong Lee于1997年提出的一种插值方法\textsuperscript{\cite{lee1997scattered}}，该方法利用控制晶格的粗略到精细层次结构来生成一系列双三次B样条函数，这些函数的和等效为一个B样条函数，从而实现插值计算效率和精度的提高。
+
+基于多层B样条方法的散乱数据插值在计算机图形学、声学、勘探地球物理学、生物医学工程、地震学中有非常广泛的应用。2017年澳大利亚国立大学的张浩阳将多层B样条方法用于对象掩码注册的深度自由形式变形网络\textsuperscript{\cite{Zhang2017deep}}；2019年澳大利亚联邦大学的Linh Nguyen将多层B样条方法应用到声源定位中，并且定位精度和计算成本方面在模拟实验和实际环境中得到验证\textsuperscript{\cite{Nguyen2019SSL}}；2013年英国伦敦帝国理工学院的姜玉乐和张楠将多层B样条插值应用于自然资源勘探的地球物理采集中磁场异常数据的插值并成功实现\textsuperscript{\cite{Jiang2013MA}}；2011年美国路易斯维尔大学王慧提出使用包含相位信息的多层B样条插值模型来分析标记核磁共振(MR)图像的方法\textsuperscript{\cite{wang2011Cardiac}}；2010年英国伦敦帝国理工学院的张楠和王阳华将多层B样条插值法对地震数据进行2D和3D插值，取得了良好的准确性和计算效率\textsuperscript{\cite{zhang2010SR}}。
