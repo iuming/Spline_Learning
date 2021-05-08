@@ -1,1 +1,152 @@
 \section{样条插值原理}
+
+\subsection{B样条插值}
+B样条方法(Basic Spline)是由Gordon与Riesenfeld在研究贝齐尔方法的基础上引入的，它在计算上具有递推性、规范性、局部支承性(非负性)、可微性等优点。
+
+\subsubsection{基本思想}
+若$ \Omega = \{ \left( x,y,z \right) | 0 \leq x <  m, 0 \leq y < n, 0 \leq z < l \}  $为$ xyz $空间上的定义域，设三维空间场中有若干离散数据点$ \mathbf{P} = \{ \left( x_{c},y_{c},z_{c}，v_{c} \right) \} $，其中$ \left( x_{c},y_{c},z_{c} \right) $为定义域$ \Omega $中的一点。为了通过散乱数据点集$ \mathbf{P} $拟合未知空间场，构造一个均匀B样条函数$ f $，样条函数的参数由该定义域上的控制栅格$ \Phi $求得。通常情况下，控制栅格由$ \left( m+3 \right) \times \left( n+3 \right) \times \left( l+3 \right) $个控制点组成。选择不同的控制栅格会影响插值函数的计算。
+
+设$ \phi_{ijk} $为控制栅格$ \Phi $上第$ i \times j \times k $个控制点，其中$ \left( i,j,k \right) $有$ i=-1,0,\cdots,m+1 $；$ j=-1,0,\cdots,n+1 $；$ k=-1,0,\cdots,l+1 $。插值函数由这些控制点被定义为：
+\begin{equation}
+    f(x,y,z)=\sum_{i=0}^{3}\sum_{j=0}^{3}\sum_{k=0}^{3}B_{i}(r)B_{j}(s)B_{k}(t) \phi_{(a+i)(b+j)(c+k)}
+    \label{三次B样条插值函数}
+\end{equation}
+其中，$ a=[x]-1,b=[y]-1,c=[z]-1,r=x-[x],s=y-[y],t=z-[z]$。$ B_{i}(r)\text{、}B_{j}(s)\text{和}B_{k}(t) $为均匀三次B样条基函数：
+\begin{equation*}
+    B_{0} \left( t \right) = \left( 1 - t \right)^{3} / 6
+\end{equation*}
+\begin{equation*}
+    B_{1} \left( t \right) = \left( 3 t^{3} - 6 t^{2} + 4 \right) / 6
+\end{equation*}
+\begin{equation*}
+    B_{2} \left( t \right) = \left( -3 t^{3} + 3 t^{2}  + 3 t + 1 \right) / 6
+\end{equation*}
+\begin{equation*}
+    B_{3} \left( t \right) = t^{3} / 6
+\end{equation*}
+其中$ t \in \left[ 0, 1 \right) $。它们根据每个控制点到$ \left( x,y,z \right) $的距离来衡量每个控制点对$ f\left( x,y,z \right) $的影响。
+
+利用三次B样条基函数，插值函数的求解被简化为寻找最接近散乱数据集$ \mathbf{P} $中的控制栅格$ \Phi $的控制点。
+
+为了确定控制栅格$ \Phi $，首先考虑离散数据点集$ \mathbf{P} $中的一个数据点$ \left( x_{c}, y_{c}, z_{c}, v_{c} \right) $，由三次样条插值公式\ref{三次B样条插值函数}可知，样条函数值$ f\left( x_{c}, y_{c}, z_{c} \right) $与其相邻的64个控制点$ \left( x_{c}, y_{c}, z_{c} \right) $相关。例如：假设$ 1 \leq x_{c}, y_{c}, z_{c} < 2 $，则控制点$ \phi_{ijk} \left( i,j,k = 0,1,2,3 \right) $决定位置在$ \left( x_{c}, y_{c}, z_{c} \right) $的值$ f $。由于函数$f$在$ \left( x_{c}, y_{c}, z_{c} \right) $的值为$ v_{c} $，因此控制点$ \phi_{ijk} $必须满足：
+\begin{equation}
+    v_{c} = \sum_{i=0}^{3}\sum_{j=0}^{3}\sum_{k=0}^{3} w_{ijk} \phi_{ijk}
+    \label{控制点约束公式}
+\end{equation}
+其中$ w_{ijk} = B_{i}(r)B_{j}(s)B_{k}(t) $；$ r=x_{c}-1 $；$ s=y_{c}-1 $；$ t=z_{c}-1 $。
+
+存在许多组控制点数据$ \phi_{ijk} $满足公式\ref{控制点约束公式}，为了使插值函数$ f $在定义域上偏差最小化，选取一组最小二乘最小的数$ \sum_{i=0}^{3}\sum_{j=0}^{3}\sum_{k=0}^{3} \phi_{ijk}^{2} $作为控制点（这将对多层B样条插值有利）。可推导出控制点方程为：
+\begin{equation}
+    \phi_{ijk} = \frac{w_{ijk}v_{c}}{\sum_{d=0}^{3}\sum_{e=0}^{3}\sum_{g=0}^{3}w_{deg}^{2}}
+    \label{控制点方程}
+\end{equation}
+
+从控制点方程\ref{控制点方程}可以看出，距离插值点$ \left( x_{c}, y_{c}, z_{c} \right) $越近的控制点越能决定插值点的值，因为离插值点越近的控制点权重$ w_{ijk} $越大。计算得样条插值函数$ f $在$ \left( x_{c}, y_{c}, z_{c} \right) $的值为$ v_{c} $，在插值点周围函数变化平滑。
+
+现在，考虑散乱数据点集$ \mathbf{P} $中所有数据点，对于每个数据点$ p_{i} $，可以通过公式\ref{控制点方程}确定其领域内$ 4 \times 4 \times 4 $个控制点的值。若存在两个数据点距离较近可能存在控制栅格重叠的部分，对于这种情况可以对其共享的几个控制点分配不同的值。通常情况下，综合考虑控制点$ \phi $的$ 4 \times 4 \times 4 $领域内的所有数据点来解决对控制点$ \phi $的多重分配，只有这些点可以通过公式\ref{控制点方程}来影响$ \phi $的值，将这组点称为$ \phi $的临近数据集。
+
+设$ P_{ijk} $为控制点$ \phi_{ijk} $的临近数据集，则：
+\begin{equation*}
+    P_{ijk} = \{ \left( x_{c}, y_{c}, z_{c}, v_{c} \right) \in \mathbf{P} | i-2 \leq x_{c} < i+2, j-2 \leq y_{c} < j+2, k-2 \leq z_{c} < k+2 \}
+\end{equation*}
+
+对于每个散乱数据点$ P_{ijk} = \left( x_{c}, y_{c}, z_{c},v_{c} \right) $，由公式\ref{控制点方程}可以得出控制点$ \phi_{ijk} $的值$ \phi_{c} $：
+\begin{equation}
+    \phi_{c} = \frac{w_{c}v_{c}}{\sum_{d=0}^{3}\sum_{e=0}^{3}\sum_{g=0}^{3}w_{deg}^{2}}
+\end{equation}
+其中$ w_{c} = w_{ijk} = B_{i}(r)B_{j}(s)B_{k}(t) $；$ i=(a+1)-\left[ x_{c} \right] $；$  j=(b+1)-\left[ y_{c} \right] $；$  k=(b+1)-\left[ z_{c} \right] $；$ r=x_{c}-\left[ x_{c} \right] $；$ s=y_{c}-\left[ y_{c} \right] $；$ t=z_{c}-\left[ z_{c} \right] $。最终计算选取误差$ e\left( \phi_{ijk} \right) = \sum_{c}\left( w_{c}\phi_{ijk} - w_{c}\phi_{c} \right)^{2} $最小的值作为控制点值$ \phi_{ijk} $，其中$ \left( w_{c}\phi_{ijk} - w_{c}\phi_{c} \right) $是控制点$ \phi_{ijk} $对插值函数$ f $在$ \left( x_{c}, y_{c}, z_{c} \right) $实际权重与真实权重之差。
+
+换句话说，$ e_{\phi_{ijk}} $是控制点$ \phi_{ijk} $的近似误差,用不同数据点对该控制点的权重来计算控制点值，可以得到：
+\begin{equation}
+    \phi_{ijk} = \frac{\sum_{c}w_{c}^{2}\phi_{c}}{\sum_{c}w_{c}^{2}}
+    \label{临近控制点计算方程}
+\end{equation}
+
+临近数据集$ \mathbf{P}_{ijk} $是数据集$ \mathbf{P} $中在控制点$ \phi_{ijk} $附近对插值函数$ f $有影响的点的集合。当$ \mathbf{P}_{ijk} $包含多个点时，公式\ref{临近控制点计算方程}通过每个数据点权重的最小平方解来求得局部逼近误差最小的控制点值$ \phi_{ijk} $。当临近数据集中仅有一个数据点时，采用公式\ref{控制点方程}计算控制点值，其不存在近似误差。但是，当临近数据集中没有数据点时，数据点对控制点的值起不到影响，则控制点$ \phi_{ijk} $可以设置为任意值，通常设置为0或者$ v_{c} $的平均值。
+
+\subsubsection{算法}
+
+利用公式\ref{临近控制点计算方程}，由离散数据点集$ \mathbf{P} $中的数据点确定控制栅格$ \Phi $，可知不需要显式地识别每个控制点地临近数据集。因为$ \mathbf{P} $中的每个数据点所影响$ \Phi $中$ 4 \times 4 $个相邻控制点的集合，所以它只属于这些控制点的临近数据集。因此，可以对每个控制点依次考虑每个数据点，对公式\ref{临近控制点计算方程}的分子分母进行有效累加。如果分母不为零，则直接通过公式计算得出，只有当控制点的临近数据点集为空时，才会出现分母为零，这种情况下将控制点值设为零。下面为B样条插值方法的伪代码，称之为BA算法。
+\begin{algorithm}[h]
+    \caption{BA算法}
+    \begin{algorithmic}[1] %每行显示行号  
+        \Require 散点数据集$ \mathbf{P} = \{ x_{c}, y_{c}, z_{c}, v_{c} \} $
+        \Ensure 控制栅格$ \Phi = \{ \phi_{ijk} \} $
+        \For{all $ i,j $}
+        \State $ \delta_{ijk} = 0 $ and $ \omega_{ijk} = 0 $
+        \EndFor
+        \For{each point $ \left( x_{c}, y_{c}, z_{c}, v_{c} \right) $ in $ \mathbf{P} $}
+        \State let $ i = \left[ x_{c} \right] - 1 $ and $ j = \left[ y_{c} \right] - 1 $ and $ k = \left[ z_{c} \right] - 1 $
+        \State let $ r = x_{c} - \left[ x_{c} \right] $ and $ s = y_{c} - \left[ y_{c} \right] $ and $ t = z_{c} - \left[ z_{c} \right] $
+        \State compute $ w_{ijk} $'s and $ \sum_{d=0}^{3}\sum_{e=0}^{3}\sum_{g=0}^{3}w_{deg}^{2} $
+        \For{$ i,j,k = 0,1,2,3 $}
+        \State compute $ \phi_{ijk} $ with Formula\ref{控制点方程}
+        \State add $ w_{ijk}^{2}\phi_{ijk} $ to $ \delta_{\left( a+i \right)\left( b+j \right)\left( c+k \right)} $
+        \State add $ w_{ijk}^{2} $ to $ \omega_{\left( a+i \right)\left( b+j \right)\left( c+k \right)} $
+        \EndFor
+        \EndFor
+        \For{all $ i,j $}
+        \If { $ \omega_{ijk} \neq 0 $ }
+        \State compute $ \phi_{ijk} = \delta_{ijk} / \omega_{ijk} $
+        \Else { let $ \phi_{ijk} = 0 $ }
+        \EndIf
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+BA算法的时间复杂度和空间复杂度为$ O\{ p + mnl \} $，其中$ p $为散乱数据点集中散乱点的个数，$ \left( m+3 \right) \times \left( n+3 \right) \times \left( l+3 \right) $为控制栅格的大小。尽管控制点的值是局部确定的，但是要尽量减小插值误差，使结果函数尽可能地重构出分散的数据。因此，选取控制栅格$ \Phi $的疏密程度，直接影响到插值函数的重构效果，对于控制点稀疏的控制栅格，插值函数重构更加平滑；对于控制点密集的控制栅格，插值函数重构更加陡峭。
+
+由于BA算法时间复杂度较低，即使在数据点集很大的情况下，通过BA算法也能很快得重构出插值函数。此外，由于B样条函数具有规范性，所以在添加或删除数据点时，只需要更新控制栅格中一个小的领域。由BA算法生成的插值函数$ f $是$C^{2}$连续的，因为它是由控制栅格$ \Phi $生成的三次B样条空间。因为$ \Phi $可以很快地从散乱数据点中计算得出，所以计算函数$ f $的大部分时间是用来在定义域$ \Omega $上从控制栅格$ \Phi $计算插值函数$ f $。
+
+\subsection{多层B样条插值}
+通过BA算法生成的插值函数在形状平滑度和精度之间存在折衷，因此，提出多层B样条插值算法来避免这种折衷。多层B样条算法通过控制栅格的多层结构来生成插值函数$ f_{k} $序列，对插值函数序列$ f_{k} $每个函数进行加和，得到最终插值函数。在该序列中，来自稀疏栅格的函数提供初略的近似，该近似在精度上被来自更精细栅格的函数进一步细化，最终将这些函数的和减少到一个等价的B样条函数。
+
+\subsubsection{基本算法}
+考虑到定义域$ \Omega $上存在多层控制栅格$ \Phi_{0},\Phi_{1},\cdots,\Phi_{h} $，假设$ \Phi_{0} $的控制点之间的间隔已知，并且从一个栅格到另一个栅格的间隔减半。因此，若$ \Phi_{k} $栅格存在$ \left( m+3 \right) \times \left( n+3 \right) \times \left( l+3 \right) $个控制点，则下一层控制栅格$ \Phi_{k+1} $则有$ \left( 2m+3 \right) \times \left( 2n+3 \right) \times \left( 2l+3 \right) $个控制点。$ \Phi_{k} $中第$ ijk $个控制点位置与$ \Phi_{k+1} $中第$ \left( 2i,2j,2k \right) $个控制点位置重合。
+
+多层B样条插值方法首先将BA算法应用于最粗的控制栅格$ \Phi_{0} $，所得到的函数$ f_{0} $作为平滑的初始近似函数。$ f_{0} $作为近似函数在散乱数据点集中每个数据点上有一个偏差$ \bigtriangleup^{1}v_{c} = v_{c} - f_{0}\left( x_{c}, y_{c}, z_{c} \right) $。在下一层控制栅格$ \Phi_{1} $中，这个偏差作为近似差$ \mathbf{P_{1}} = \{ x_{c}, y_{c}, z_{c}, \bigtriangleup^{1}v_{c} \} $，对改近似差进行插值，求得近似函数$ f_{1} $，得到较为精确的重构场$ f_{0}+f_{1} $以及$ \mathbf{P} $中每个数据点的一个更小偏差$ \bigtriangleup^{2}v_{c} = v_{c} - f_{0}\left( x_{c}, y_{c}, z_{c} \right) - f_{1}\left( x_{c}, y_{c}, z_{c} \right) $。
+
+对于第$ k $层，使用近似差数据集$ \mathbf{P_{k}} = \{ \left( x_{c}, y_{c}, z_{c}, \bigtriangleup^{k}v_{c} \right) \} $计算出第$ k $层控制栅格$ \Phi_{k} $，从而推导近似函数$ f_{k} $，其中$ \bigtriangleup^{k}v_{c} = v_{c} - \sum_{i=0}^{k-1}f_{i}\left( x_{c}, y_{c}, z_{c} \right) = \bigtriangleup^{k-1}v_{c} - f_{k-1}\left( x_{c}, y_{c}, z_{c} \right) , \bigtriangleup^{0}v_{c} = v_{c} $。该计算过程从初始最粗控制栅格$ \Phi_{0} $开始，一直计算到最精细栅格$ \Phi_{h} $。最后得到的近似函数$ f $为序列函数$ f_{k} $之和，即$ f = \sum_{k=0}^{h} f_{k} $。通过多层B样条这种方式，得到的是一个平滑且接近于$ \mathbf{P} $的近似解。以下为多层B样条拟合的基本算法，称之为MBA算法。
+
+\begin{algorithm}
+    \caption{MBA算法}
+    \begin{algorithmic}[1] %每行显示行号  
+        \Require 散点数据集$ \mathbf{P} = \{ x_{c}, y_{c}, z_{c}, v_{c} \} $
+        \Ensure 多层控制栅格$ \Phi_{0},\Phi_{1},\cdots,\Phi_{h} $
+        \State let $ k = 0 $
+        \While{$ k \leq h $}
+        \State let $ \mathbf{P_{k}} = \{ \left( x_{c}, y_{c}, z_{c}, \bigtriangleup^{k}v_{c} \right) \} $
+        \State compute $ \Phi_{k} $ from $ \mathbf{P_{k}} $ by BA algorithm
+        \State compute $ \bigtriangleup^{k+1}v_{c} = \bigtriangleup^{k}v_{c} - f_{k}\left( x_{c}, y_{c}, z_{c} \right) $ for each data point
+        \State let $ k = k+1 $
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+
+设散乱数据点集$ \mathbf{P} $中有$ p $个数据点，最精细控制栅格$ \Phi_{h} $的大小为$ \left( m+3 \right) \times \left( n+3 \right) \times \left( l+3 \right) $，第$ k $个控制栅格控制点数量为第$ k+1 $个控制栅格的八分之一。因此，MBA算法的时间复杂度为$ O\left( p+mnl \right) + O\left( p+\frac{1}{8}mnl \right)+ \cdots+O\left( p+\frac{1}{8^{h}}mnl \right) = O\left( hp+\frac{8}{7}mnl \right) $，空间复杂度为$ O\left( p+\frac{8}{7}mnl \right) $。通过MBA算法得到的近似函数是$ C^{2} $连续的，因为它是通过多个$ C^{2} $连续的样条函数加和得到的。
+
+\subsubsection{优化算法}
+多层B样条插值算法(MBA算法)通过生成多个控制栅格层数，来求得近似重构函数$ f $。为了求得$ f $，必须求出每层控制栅格$ \Phi_{k} $的控制点值，从而确定该层的近似函数$ f_{k} $，再将它们的值相加从而得到重构函数$ f $。如果$ f $在定义域$ \Omega $中有大量的散乱数据点，则会出现大量的计算时间开销。为此，提出一种在控制栅格中逐步应用B样条优化来解决这个问题，使得$ f $可以用一个B样条函数来表示，而不是几个B样条函数之和。因此，$ f_{k} $的计算仅在$ \Phi_{k} $中少量的控制点，而不是$ \Omega $中的所有点。
+
+设$ F\left( \Phi \right) $为控制栅格$ \Phi $生成的B样条函数，设$ | \Phi | $为$ \Phi $的大小，则通过B样条优化可以从最粗的控制栅格$ \Phi_{0} $推导出控制栅格$ \Phi_{0}^{'} $，如$ F\left( \Phi_{0}^{'} \right) = f_{0} , | \Phi_{0}^{'} | = | \Phi_{1} | $，那么，函数$ f_{0} $和$ f_{1} $的和可以由控制栅格$ \Psi_{1} $计算得出，该控制栅格是由$ \Phi_{0}^{'} $和$ \Phi_{1} $中的每对对应的控制点相加得到的。也就是说，$ F\left( \Psi_{1} \right) = g_{1} = f_{0} + f_{1} $，其中$ \Psi_{1} = \Phi_{0}^{'} + \Phi_{1} $。
+
+设$ g_{k} = \sum_{i=0}^{k} f_{i} $是层次中直到第$ k $层的函数$ f_{i} $的部分和，假设函数$ g_{k-1} $是由控制栅格$ \Psi_{k-1} $计算得出，$ \Psi_{k-1} = \Phi_{k-1} $。和上面计算$ \Psi_{1} $一样，可以通过优化$ \Psi_{k-1} $得到$ \Psi_{k-1}^{'} $，并将$ \Psi_{k-1}^{'} $加上$ \Phi_{k} $得到$ \Psi_{k} $，得到$ F\left( \Psi_{k} \right) = g_{k} , | \Psi_{k} | = | \Phi_{k} | $，也就是$ \Psi_{k} = \Psi_{k-1}^{'} + \Phi_{k} $。因此，从$ g_{0} = f_{0} , \Psi_{0} = \Phi_{0} $可以计算出一系列的控制栅格$ \Psi_{k} $，最终计算出最后的控制栅格$ \Psi_{h} $来得到最终的近似函数$ f = g_{h} $。下面给出MBA优化算法的伪代码。
+
+\begin{algorithm}
+    \caption{MBA优化算法}
+    \begin{algorithmic}[1] %每行显示行号  
+        \Require 散点数据集$ \mathbf{P} = \{ x_{c}, y_{c}, z_{c}, v_{c} \} $
+        \Ensure 控制栅格$ \Psi $
+        \State let $ \Phi = \Phi_{0} $
+        \State let $ \Psi^{'} = 0 $
+        \While{$ \Phi \neq \Phi_{h} $}
+        \State compute $ \Phi $ from $ \mathbf{P} $ by the BA algorithm
+        \State compute $ \mathbf{P} = \mathbf{P} - F\left( \Phi \right) $
+        \State compute $ \Psi = \Psi^{'} + \Phi $
+        \State let $ \Phi_{k} = \Phi_{k+1} $
+        \State refine $ \Psi $ into $ \Psi^{'} $ whereby $ F\left( \Psi^{'} \right) = F\left( \Psi \right) $ and $ | \Psi^{'} | = | \Phi | $
+        \EndWhile
+    \end{algorithmic}
+\end{algorithm}
+
+设散乱数据点集$ \mathbf{P} $中有$ p $个数据点，最终控制栅格的大小为$ \left( m+3 \right) \times \left( n+3 \right) \times \left( l+3 \right) $，由于优化MBA算法所需的计算数量与控制点的数量成线性关系，因此MBA优化算法的时间复杂度为$ O\left( hp+\frac{8}{7}mnl \right) $，空间复杂度为$ O\left( p+mnl \right) $。如果层级结构的深度比控制点数量少得多，那么MBA优化算法运行时间复杂度和空间复杂度与最稠密控制栅格的BA算法相同，但是MBA优化算法生成的函数要平滑得多。
